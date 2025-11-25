@@ -251,7 +251,7 @@ llm = ChatParallelWeb(
 The integration automatically handles message formatting and merges consecutive messages of the same type to satisfy API requirements:
 
 ```python
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain.messages import HumanMessage, SystemMessage
 
 # These consecutive system messages will be automatically merged
 messages = [
@@ -268,4 +268,4 @@ response = llm.invoke(messages)
 
 ## API reference
 
-For detailed documentation of all features and configuration options, head to the @[`ChatParallelWeb`] API reference or https://docs.parallel.ai/chat-api/chat-quickstart
+For detailed documentation of all features and configuration options, head to the @[`ChatParallelWeb`] API reference or or the [Parallel chat API quickstart](https://docs.parallel.ai/chat-api/chat-quickstart).
