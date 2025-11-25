@@ -773,3 +773,8 @@ packages:
   path: libs/voyageai
   downloads: 55000
   downloads_updated_at: "2025-11-10T00:06:22.543193+00:00"
+- name: langchain-parallel
+  repo: parallel-web/langchain-parallel
+  provider_page: parallel
+  downloads: 0
+  downloads_updated_at: "2025-11-24T00:00:00.000000+00:00"

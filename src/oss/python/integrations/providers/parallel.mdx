@@ -1,0 +1,140 @@
+---
+title: Parallel
+---
+
+>[Parallel](https://platform.parallel.ai/) is a real-time web search and content extraction platform designed specifically for LLMs and AI applications.
+
+
+## Installation and Setup
+
+`Parallel` integration exists in its own [partner package](https://pypi.org/project/langchain-parallel/). You can install it with:
+
+```python
+pip install -qU langchain-parallel
+```
+
+In order to use the package, you will also need to set the `PARALLEL_API_KEY` environment variable to your Parallel API key. You can obtain an API key by [signing up at Parallel](https://platform.parallel.ai).
+
+## Chat Models
+
+Parallel provides `ChatParallelWeb`, a chat model with real-time web research capabilities built in.
+
+```python
+from langchain_parallel import ChatParallelWeb
+```
+
+### Basic Usage
+
+```python
+from langchain_parallel import ChatParallelWeb
+import os
+
+# Initialize the chat model
+llm = ChatParallelWeb(
+    model="speed",  # Fast response model
+    temperature=0.7,
+    api_key=os.environ["PARALLEL_API_KEY"]
+)
+
+# Use with messages
+messages = [
+    ("system", "You are a helpful assistant with access to real-time web information."),
+    ("human", "What are the latest developments in renewable energy?")
+]
+
+response = llm.invoke(messages)
+print(response.content)
+```
+
+### Streaming Support
+
+ChatParallelWeb supports streaming for real-time token delivery:
+
+```python
+from langchain_parallel import ChatParallelWeb
+import os
+
+llm = ChatParallelWeb(api_key=os.environ["PARALLEL_API_KEY"])
+
+# Stream responses
+for chunk in llm.stream("What's happening in AI today?"):
+    print(chunk.content, end="", flush=True)
+```
+
+### Async Support
+
+```python
+from langchain_parallel import ChatParallelWeb
+import os
+
+llm = ChatParallelWeb(api_key=os.environ["PARALLEL_API_KEY"])
+
+# Async invocation
+response = await llm.ainvoke("Tell me about quantum computing")
+
+# Async streaming
+async for chunk in llm.astream("What's new in space exploration?"):
+    print(chunk.content, end="", flush=True)
+```
+
+## Tools
+
+### ParallelWebSearchTool
+
+Real-time web search tool that returns structured, LLM-optimized results with domain filtering and configurable search modes.
+
+```python
+from langchain_parallel import ParallelWebSearchTool
+```
+
+See the [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) for detailed usage examples.
+
+### ParallelExtractTool
+
+Content extraction tool that retrieves clean, markdown-formatted content from web pages, removing ads and boilerplate.
+
+```python
+from langchain_parallel import ParallelExtractTool
+```
+
+See the [Parallel Extract tool documentation](/oss/integrations/tools/parallel_extract) for detailed usage examples.
+
+## Configuration Options
+
+### ChatParallelWeb Parameters
+
+- `model`: Model to use (default: "speed" for fast responses)
+- `temperature`: Controls response randomness (0.0 to 1.0)
+- `max_tokens`: Maximum tokens in response (optional)
+- `timeout`: Request timeout in seconds (optional)
+- `max_retries`: Number of retry attempts (default: 2)
+
+### ParallelWebSearchTool Parameters
+
+- `objective`: Natural language description of search intent (max 5,000 characters)
+- `search_queries`: List of up to 5 specific search queries (200 characters each)
+- `max_results` (1-40): Number of search results to return (default: 10)
+- `mode`: Search mode that presets defaults for different use cases:
+  - `"one-shot"` (default): Returns comprehensive results with longer excerpts. Best for direct user queries or where lower latency is desired.
+  - `"agentic"`: Returns more concise, token-efficient results designed for multi-step agentic workflows.
+- `source_policy`: Domain filtering with `include_domains` and `exclude_domains` lists
+- `fetch_policy`: Cache and timeout configuration with `max_age_seconds` and `timeout_seconds`
+- `include_metadata`: Include search statistics and metadata (True/False)
+
+**Note:** You must provide either `objective` or `search_queries` (at least one is required).
+
+### ParallelExtractTool Parameters
+
+- `urls`: List of URLs to extract content from (required)
+- `search_objective`: Focus extraction on specific information (optional)
+- `excerpts`: Configuration for excerpt length with `max_chars_per_result` parameter
+- `full_content`: Boolean to get full content vs. excerpts (default: True)
+- `fetch_policy`: Cache and timeout settings with `max_age_seconds` and `timeout_seconds`
+
+Response includes `url`, `title`, `content` (markdown format), `publish_date`, and `error_type` for failed extractions.
+
+## Related
+
+- [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) - Complete guide to ParallelWebSearchTool with advanced examples
+- [Parallel LangChain documentation](https://docs.parallel.ai/integrations/langchain)
+- [Parallel API documentation](https://docs.parallel.ai/api-reference/) - Official Parallel API reference

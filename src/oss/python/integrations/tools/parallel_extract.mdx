@@ -1,0 +1,268 @@
+---
+title: Parallel Extract
+---
+
+>[Parallel](https://platform.parallel.ai/) is a real-time web search and content extraction platform designed specifically for LLMs and AI applications.
+
+The **ParallelExtractTool** retrieves clean, structured content from web pages via Parallel's Extract API. It automatically removes ads, navigation menus, and boilerplate content, returning clean markdown-formatted text optimized for LLM consumption.
+
+Parallel's content extraction provides reliable access to web content without the overhead of traditional scraping. The platform offers unique features like focused extraction (target specific information using natural language), batch processing for multiple URLs, configurable excerpt lengths, and robust error handling for failed extractions.
+
+This notebook goes over how to use Parallel Extract with LangChain.
+
+## Setup
+
+### Installation
+
+Install the LangChain Parallel integration package:
+
+```python
+pip install -qU langchain-parallel
+```
+
+### Credentials
+
+You'll need a Parallel API key to use this integration. Get started by [signing up here](https://platform.parallel.ai).
+
+```python
+import getpass
+import os
+
+if not os.environ.get("PARALLEL_API_KEY"):
+    os.environ["PARALLEL_API_KEY"] = getpass.getpass("Parallel API key:\n")
+```
+
+## Using ParallelExtractTool
+
+ParallelExtractTool is a tool that can be used with LangChain agents to extract clean content from web pages. It provides a structured interface for content extraction with markdown-formatted output:
+
+```python
+from langchain_parallel import ParallelExtractTool
+
+# Initialize the ParallelExtractTool
+extract_tool = ParallelExtractTool(api_key=os.environ["PARALLEL_API_KEY"])
+
+# Extract content from a single URL
+result = extract_tool.invoke({
+    "urls": ["https://example.com/article"]
+})
+
+# Access the extracted content
+for item in result:
+    if item.get('error_type'):
+        print(f"Failed to extract {item.get('url')}: {item.get('error_type')}")
+    else:
+        print(f"Title: {item.get('title')}")
+        print(f"URL: {item.get('url')}")
+        print(f"Content: {item.get('content')[:200]}...")  # First 200 chars
+        if item.get('publish_date'):
+            print(f"Published: {item.get('publish_date')}")
+```
+
+The tool accepts a list of URLs and returns structured results including:
+- `url`: The source URL
+- `title`: Page title
+- `content`: Clean, markdown-formatted content
+- `publish_date`: Publication date (when available)
+- `error_type`: Error description for failed extractions (e.g., "http_error")
+
+### Batch Extraction
+
+Extract content from multiple URLs in a single request:
+
+```python
+# Extract from multiple URLs
+result = extract_tool.invoke({
+    "urls": [
+        "https://example.com/article1",
+        "https://example.com/article2",
+        "https://example.com/article3"
+    ]
+})
+
+# Process results
+for item in result:
+    if not item.get('error_type'):
+        print(f"\n--- {item['title']} ---")
+        print(f"URL: {item['url']}")
+        print(f"Content length: {len(item['content'])} characters")
+```
+
+## Advanced Features for ParallelExtractTool
+
+### Focused Extraction
+
+Use the `search_objective` parameter to focus extraction on specific information:
+
+```python
+# Extract only content relevant to a specific topic
+result = extract_tool.invoke({
+    "urls": ["https://example.com/comprehensive-guide"],
+    "search_objective": "pricing and subscription plans"
+})
+
+# The content will be focused on pricing-related information
+print(result[0]['content'])
+```
+
+This is useful when you need specific information from large pages without processing the entire document.
+
+### Controlling Excerpt Length
+
+Control the amount of content extracted using the `excerpts` parameter:
+
+```python
+# Get shorter excerpts
+result = extract_tool.invoke({
+    "urls": ["https://example.com/article"],
+    "excerpts": {
+        "max_chars_per_result": 1000  # Limit to ~1000 characters
+    },
+    "full_content": False  # Use excerpts mode instead of full content
+})
+```
+
+Set `full_content: True` to extract complete page content:
+
+```python
+# Get full content instead of excerpts
+result = extract_tool.invoke({
+    "urls": ["https://example.com/article"],
+    "full_content": True
+})
+```
+
+### Fetch Policies and Caching
+
+Configure caching behavior and timeouts with the `fetch_policy` parameter:
+
+```python
+# Configure caching and timeout behavior
+result = extract_tool.invoke({
+    "urls": ["https://example.com/article"],
+    "fetch_policy": {
+        "max_age_seconds": 86400,  # Cache content for 24 hours (in seconds)
+        "timeout_seconds": 30      # Request timeout in seconds
+    }
+})
+```
+
+**Fetch policy parameters:**
+- `max_age_seconds`: Cache duration - how long to use cached content
+- `timeout_seconds`: Request timeout - maximum time to wait for page load
+
+### Advanced Usage Example
+
+Combine multiple features for sophisticated extraction:
+
+```python
+# Advanced extraction with all options
+result = extract_tool.invoke({
+    "urls": [
+        "https://example.com/article1",
+        "https://example.com/article2"
+    ],
+    "search_objective": "key findings and conclusions",
+    "excerpts": {
+        "max_chars_per_result": 2000
+    },
+    "fetch_policy": {
+        "max_age_seconds": 3600,    # Cache for 1 hour
+        "timeout_seconds": 60       # 60 second timeout
+    }
+})
+
+# Process results with error handling
+for item in result:
+    url = item.get('url')
+    error = item.get('error_type')
+
+    if error:
+        print(f"✗ Failed to extract {url}: {error}")
+    else:
+        print(f"✓ Extracted: {item['title']}")
+        print(f"  Length: {len(item['content'])} chars")
+        if item.get('publish_date'):
+            print(f"  Published: {item['publish_date']}")
+```
+
+### Key Parameters
+
+- **urls**: List of URLs to extract content from (required)
+- **search_objective**: Natural language description to focus extraction on specific information (optional)
+- **excerpts**: Configuration for excerpt length:
+  - `max_chars_per_result`: Maximum characters per result for compressed, contextual excerpts (same as in ParallelWebSearchTool)
+- **full_content**: Boolean to get full content vs. excerpts (default: True)
+- **fetch_policy**: Cache and timeout settings (optional):
+  - `max_age_seconds`: Cache duration - how long to use cached content
+  - `timeout_seconds`: Request timeout - maximum time to wait for page load
+
+## Async Support
+
+ParallelExtractTool supports asynchronous operations for better performance in async applications:
+
+```python
+import asyncio
+
+async def extract_async():
+    return await extract_tool.ainvoke({
+        "urls": [
+            "https://example.com/article1",
+            "https://example.com/article2"
+        ],
+        "search_objective": "main topics and conclusions"
+    })
+
+# Run async extraction
+result = asyncio.run(extract_async())
+print(f"Extracted {len(result)} pages")
+```
+
+## Error Handling
+
+Handle extraction failures gracefully:
+
+```python
+from langchain_parallel import ParallelExtractTool
+import os
+
+extract_tool = ParallelExtractTool(api_key=os.environ["PARALLEL_API_KEY"])
+
+try:
+    result = extract_tool.invoke({
+        "urls": [
+            "https://example.com/valid-article",
+            "https://invalid-url-that-will-fail.com/article"
+        ]
+    })
+
+    # Separate successful and failed extractions
+    successful = [item for item in result if not item.get('error_type')]
+    failed = [item for item in result if item.get('error_type')]
+
+    print(f"✓ Successfully extracted: {len(successful)} pages")
+    print(f"✗ Failed extractions: {len(failed)} pages")
+
+    for item in failed:
+        print(f"  - {item['url']}: {item['error_type']}")
+
+except Exception as e:
+    print(f"Extraction failed: {str(e)}")
+```
+
+**Common error scenarios:**
+- **Missing API key**: Ensure `PARALLEL_API_KEY` environment variable is set
+- **Invalid URLs**: Tool returns `error_type` in result for unreachable pages
+- **Timeout errors**: Increase `request_timeout` in fetch_policy for slow-loading pages
+- **Rate limiting**: Implement retry logic with exponential backoff
+
+---
+
+## Related
+
+- [Parallel provider documentation](/oss/integrations/providers/parallel) - Overview of ChatParallelWeb chat model and ParallelWebSearchTool
+- [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) - Real-time web search with LLM-optimized results
+
+## API reference
+
+For detailed documentation of all Parallel API features and configurations, visit the [Parallel Extract API documentation](https://docs.parallel.ai/api-reference/extract-beta/extract).
