@@ -32,7 +32,7 @@ title: Parallel
 
     ---
 
-    Real-time web search with structured, LLM-optimized results.
+    Searches the web.
 
     [:octicons-arrow-right-24: Reference](./ParallelWebSearchTool.md)
 
@@ -40,7 +40,7 @@ title: Parallel
 
     ---
 
-    Content extraction from web pages, removing ads and boilerplate.
+    Extracts relevant content from specific web URLs.
 
     [:octicons-arrow-right-24: Reference](./ParallelExtractTool.md)
 
