@@ -486,7 +486,11 @@ nav:
         - OpenAIEmbeddings: integrations/langchain_openai/OpenAIEmbeddings.md
         - AzureOpenAIEmbeddings: integrations/langchain_openai/AzureOpenAIEmbeddings.md
         - Middleware: integrations/langchain_openai/middleware.md
-      - Parallel: integrations/langchain_parallel.md
+      - Parallel:
+        - integrations/langchain_parallel/index.md
+        - ChatParallelWeb: integrations/langchain_parallel/ChatParallelWeb.md
+        - ParallelWebSearchTool: integrations/langchain_parallel/ParallelWebSearchTool.md
+        - ParallelExtractTool: integrations/langchain_parallel/ParallelExtractTool.md
       - Perplexity: integrations/langchain_perplexity.md
       - Pinecone: integrations/langchain_pinecone.md
       - Postgres: integrations/langchain_postgres.md
