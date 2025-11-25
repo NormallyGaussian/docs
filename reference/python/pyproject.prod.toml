@@ -106,6 +106,15 @@ link-mode = "copy"
 environments = ["python_version >= '3.13' and platform_python_implementation != 'PyPy'"]
 override-dependencies = [
     "pytest-codspeed>=3.1.0,<4.0.0",
+    # Override langchain-core version to resolve conflict between deepagents (needs >=1.1.0)
+    # and langchain-parallel (needs <0.4.0)
+    "langchain-core>=1.0.0,<2.0.0",
+    # Override openai version to resolve conflict between langchain-fireworks (needs >=2.0.0)
+    # and langchain-parallel (needs <2.0.0)
+    "openai>=2.0.0,<3.0.0",
+    # Override httpx version to resolve conflict between langchain-google-vertexai (needs >=0.28.0)
+    # and langchain-parallel (needs <0.28.0)
+    "httpx>=0.28.0,<1.0.0",
 ]
 
 [tool.uv.sources]

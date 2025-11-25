@@ -28,7 +28,7 @@ title: Parallel
 
     [:octicons-arrow-right-24: Reference](./ChatParallelWeb.md)
 
-- :material-magnifying-glass:{ .lg .middle } __`ParallelWebSearchTool`__
+- :material-magnify:{ .lg .middle } __`ParallelWebSearchTool`__
 
     ---
 
