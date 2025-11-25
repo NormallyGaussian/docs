@@ -2,151 +2,33 @@
 title: Parallel
 ---
 
->[Parallel](https://platform.parallel.ai/) is a real-time web search and content extraction platform designed specifically for LLMs and AI applications.
+This page covers all LangChain integrations with [Parallel](https://platform.parallel.ai/)
 
-
-## Installation and Setup
+{/* ## Installation and Setup
 
 `Parallel` integration exists in its own [partner package](https://pypi.org/project/langchain-parallel/). You can install it with:
 
-```python
+```bash
 pip install -qU langchain-parallel
 ```
 
-In order to use the package, you will also need to set the `PARALLEL_API_KEY` environment variable to your Parallel API key. You can obtain an API key by [signing up at Parallel](https://platform.parallel.ai).
+In order to use the package, you will also need to set the `PARALLEL_API_KEY` environment variable to your Parallel API key. You can obtain an API key by [signing up at Parallel](https://platform.parallel.ai). */}
 
-## Tools
+## Model interfaces
 
-### ParallelWebSearchTool
+<Columns cols={2}>
+    <Card title="ChatParallelWeb" href="/oss/integrations/chat/parallel" cta="Get started" icon="message" arrow>
+        Chat model with real-time web research capabilities.
+    </Card>
+</Columns>
 
-Real-time web search tool that returns structured, LLM-optimized results with domain filtering and configurable search modes.
+## Tools and toolkits
 
-```python
-from langchain_parallel import ParallelWebSearchTool
-
-# Basic instantiation - API key from environment
-tool = ParallelWebSearchTool()
-
-# With explicit API key and custom base URL
-tool = ParallelWebSearchTool(
-    api_key="your-api-key",
-    base_url="https://api.parallel.ai",  # default value
-)
-
-# Using an objective (natural language) with metadata
-result = tool.invoke(
-    {
-        "objective": "What are the latest developments in artificial intelligence in 2024?",
-        "max_results": 5,
-        "include_metadata": True,  # Include search timing and statistics
-    }
-)
-
-print(result)
-```
-
-See the [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) for detailed usage examples.
-
-### ParallelExtractTool
-
-Content extraction tool that retrieves clean, markdown-formatted content from web pages, removing ads and boilerplate.
-
-```python
-from langchain_parallel import ParallelExtractTool
-
-# Basic instantiation - API key from environment
-tool = ParallelExtractTool()
-
-# With explicit API key and custom settings
-tool = ParallelExtractTool(
-    api_key="your-api-key",
-    base_url="https://api.parallel.ai",  # default value
-    max_chars_per_extract=5000,  # Limit content length
-)
-
-# Extract from a single URL
-result = tool.invoke(
-    {"urls": ["https://en.wikipedia.org/wiki/Artificial_intelligence"]}
-)
-
-print(f"Extracted {len(result)} result(s)")
-print(f"Title: {result[0]['title']}")
-print(f"URL: {result[0]['url']}")
-print(f"Content length: {len(result[0]['content'])} characters")
-print(f"Content preview: {result[0]['content'][:200]}...")
-```
-
-See the [Parallel Extract tool documentation](/oss/integrations/tools/parallel_extract) for detailed usage examples.
-
-## Chat Models
-
-Parallel provides `ChatParallelWeb`, a chat model with real-time web research capabilities built in.
-
-### Basic Usage
-
-```python
-from langchain_parallel import ChatParallelWeb
-import os
-
-# Initialize the chat model
-llm = ChatParallelWeb(
-    model="speed",  # Fast response model
-    temperature=0.7,
-    api_key=os.environ["PARALLEL_API_KEY"]
-)
-
-# Use with messages
-messages = [
-    ("system", "You are a helpful assistant with access to real-time web information."),
-    ("human", "What are the latest developments in renewable energy?")
-]
-
-response = llm.invoke(messages)
-print(response.content)
-```
-
-### Streaming Support
-
-ChatParallelWeb supports streaming for real-time token delivery:
-
-```python
-from langchain_parallel import ChatParallelWeb
-import os
-
-llm = ChatParallelWeb(api_key=os.environ["PARALLEL_API_KEY"])
-
-# Stream responses
-for chunk in llm.stream("What's happening in AI today?"):
-    print(chunk.content, end="", flush=True)
-```
-
-### Async Support
-
-```python
-from langchain_parallel import ChatParallelWeb
-import os
-
-llm = ChatParallelWeb(api_key=os.environ["PARALLEL_API_KEY"])
-
-# Async invocation
-response = await llm.ainvoke("Tell me about quantum computing")
-
-# Async streaming
-async for chunk in llm.astream("What's new in space exploration?"):
-    print(chunk.content, end="", flush=True)
-```
-
-### ChatParallelWeb Parameters
-
-- `model`: Model to use (default: "speed" for fast responses)
-- `temperature`: Controls response randomness (0.0 to 1.0)
-- `max_tokens`: Maximum tokens in response (optional)
-- `timeout`: Request timeout in seconds (optional)
-- `max_retries`: Number of retry attempts (default: 2)
-
-
-## Related
-
-- [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) - Complete guide to ParallelWebSearchTool with advanced examples
-- [Parallel LangChain documentation](https://docs.parallel.ai/integrations/langchain)
-- [Parallel API documentation](https://docs.parallel.ai/api-reference/) - Official Parallel API reference
+<Columns cols={2}>
+    <Card title="ParallelWebSearchTool" href="/oss/integrations/tools/parallel_search" cta="Get started" icon="magnifying-glass" arrow>
+        Real-time web search with structured, LLM-optimized results.
+    </Card>
+    <Card title="ParallelExtractTool" href="/oss/integrations/tools/parallel_extract" cta="Get started" icon="file-lines" arrow>
+        Content extraction from web pages, removing ads and boilerplate.
+    </Card>
+</Columns>
