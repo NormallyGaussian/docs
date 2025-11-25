@@ -4,25 +4,39 @@ title: Parallel Extract
 
 >[Parallel](https://platform.parallel.ai/) is a real-time web search and content extraction platform designed specifically for LLMs and AI applications.
 
-The **ParallelExtractTool** retrieves clean, structured content from web pages via Parallel's Extract API. It automatically removes ads, navigation menus, and boilerplate content, returning clean markdown-formatted text optimized for LLM consumption.
+The ParallelExtractTool provides access to Parallel's Extract API, which extracts clean, structured content from web pages.
 
-Parallel's content extraction provides reliable access to web content without the overhead of traditional scraping. The platform offers unique features like focused extraction (target specific information using natural language), batch processing for multiple URLs, configurable excerpt lengths, and robust error handling for failed extractions.
+## Overview
 
-This notebook goes over how to use Parallel Extract with LangChain.
+### Integration details
+
+| Class | Package | Serializable | JS support |  Package latest |
+| :--- | :--- | :---: | :---: | :---: |
+| [ParallelExtractTool](https://python.langchain.com/api_reference/parallel_web/extract_tool/langchain_parallel.extract_tool.ParallelExtractTool.html) | [langchain-parallel](https://python.langchain.com/api_reference/parallel_web/) | ❌ | ❌ |  ![PyPI - Version](https://img.shields.io/pypi/v/langchain-parallel?style=flat-square&label=%20) |
+
+### Tool features
+
+- **Clean content extraction**: Extracts main content from web pages, removing ads, navigation, and boilerplate
+- **Markdown formatting**: Returns content formatted as clean markdown
+- **Batch processing**: Extract from multiple URLs in a single API call
+- **Metadata extraction**: Includes title, publish date, and other metadata
+- **Content length control**: Configure maximum characters per extraction
+- **Error handling**: Gracefully handles failed extractions with detailed error information
+- **Async support**: Full async/await support for better performance
 
 ## Setup
 
-### Installation
+The integration lives in the `langchain-parallel` package.
 
-Install the LangChain Parallel integration package:
 
 ```python
-pip install -qU langchain-parallel
+%pip install --quiet -U langchain-parallel
 ```
 
 ### Credentials
 
-You'll need a Parallel API key to use this integration. Get started by [signing up here](https://platform.parallel.ai).
+Head to [Parallel](https://parallel.ai) to sign up and generate an API key. Once you've done this set the PARALLEL_API_KEY environment variable:
+
 
 ```python
 import getpass
@@ -32,18 +46,35 @@ if not os.environ.get("PARALLEL_API_KEY"):
     os.environ["PARALLEL_API_KEY"] = getpass.getpass("Parallel API key:\n")
 ```
 
-## Using ParallelExtractTool
+## Instantiation
 
-ParallelExtractTool is a tool that can be used with LangChain agents to extract clean content from web pages. It provides a structured interface for content extraction with markdown-formatted output:
+Here we show how to instantiate an instance of the ParallelExtractTool. The tool can be configured with API key and content length parameters:
+
 
 ```python
 from langchain_parallel import ParallelExtractTool
 
-# Initialize the ParallelExtractTool
-extract_tool = ParallelExtractTool(api_key=os.environ["PARALLEL_API_KEY"])
+# Basic instantiation - API key from environment
+tool = ParallelExtractTool()
 
-# Extract content from a single URL
-result = extract_tool.invoke(
+# With explicit API key and custom settings
+tool = ParallelExtractTool(
+    api_key="your-api-key",
+    base_url="https://api.parallel.ai",  # default value
+    max_chars_per_extract=5000,  # Limit content length
+)
+```
+
+## Invocation
+
+### [Invoke directly with args](/docs/concepts/tools/#use-the-tool-directly)
+
+You can invoke the tool with a list of URLs to extract content from:
+
+
+```python
+# Extract from a single URL
+result = tool.invoke(
     {"urls": ["https://en.wikipedia.org/wiki/Artificial_intelligence"]}
 )
 
@@ -54,20 +85,10 @@ print(f"Content length: {len(result[0]['content'])} characters")
 print(f"Content preview: {result[0]['content'][:200]}...")
 ```
 
-The tool accepts a list of URLs and returns structured results including:
-- `url`: The source URL
-- `title`: Page title
-- `content`: Clean, markdown-formatted content
-- `publish_date`: Publication date (when available)
-- `error_type`: Error description for failed extractions (e.g., "http_error")
-
-### Batch Extraction
-
-Extract content from multiple URLs in a single request:
 
 ```python
 # Extract from multiple URLs
-result = extract_tool.invoke(
+result = tool.invoke(
     {
         "urls": [
             "https://en.wikipedia.org/wiki/Machine_learning",
@@ -77,23 +98,79 @@ result = extract_tool.invoke(
     }
 )
 
-# Process results
 print(f"Extracted {len(result)} results")
 for i, item in enumerate(result, 1):
     print(f"\n{i}. {item['title']}")
     print(f"   URL: {item['url']}")
     print(f"   Content length: {len(item['content'])} characters")
+
+# Example response structure:
+# [
+#     {
+#         "url": "https://example.com/article",
+#         "title": "Article Title",
+#         "content": "# Article Title\n\nMain content in markdown...",
+#         "publish_date": "2024-01-15"  # Optional
+#     }
+# ]
 ```
 
-## Advanced Features for ParallelExtractTool
+### [Invoke with ToolCall](/docs/concepts/tool_calling/#tool-execution)
 
-### Focused Extraction
+We can also invoke the tool with a model-generated ToolCall, in which case a ToolMessage will be returned:
 
-Use the `search_objective` parameter to focus extraction on specific information:
 
 ```python
-# Extract only content relevant to a specific topic
-result = extract_tool.invoke(
+# This is usually generated by a model, but we'll create a tool call directly for demo purposes.
+model_generated_tool_call = {
+    "args": {
+        "urls": [
+            "https://en.wikipedia.org/wiki/Climate_change",
+            "https://en.wikipedia.org/wiki/Renewable_energy",
+        ]
+    },
+    "id": "call_123",
+    "name": tool.name,  # "parallel_extract"
+    "type": "tool_call",
+}
+
+result = tool.invoke(model_generated_tool_call)
+print(result)
+print(f"Tool name: {tool.name}")  # parallel_extract
+print(f"Tool description: {tool.description}")
+```
+
+### [Async Usage](/docs/concepts/tools/#async)
+
+The tool supports full async/await operations for better performance in async applications:
+
+
+```python
+async def extract_async():
+    return await tool.ainvoke(
+        {
+            "urls": [
+                "https://en.wikipedia.org/wiki/Python_(programming_language)",
+                "https://en.wikipedia.org/wiki/JavaScript",
+            ]
+        }
+    )
+
+
+# Run async extraction
+result = await extract_async()
+print(f"Extracted {len(result)} results asynchronously")
+```
+
+### Advanced Features
+
+The extract tool supports focused extraction with search objectives/queries, fetch policies, and fine-grained control over excerpts and full content:
+
+
+
+```python
+# Extract focused excerpts with search objective
+result = tool.invoke(
     {
         "urls": ["https://en.wikipedia.org/wiki/Artificial_intelligence"],
         "search_objective": "What are the main applications and ethical concerns of AI?",
@@ -104,17 +181,9 @@ result = extract_tool.invoke(
 
 print(f"Extracted focused excerpts: {len(result[0].get('excerpts', []))} excerpts")
 print(f"Content preview: {result[0]['content'][:200]}...")
-```
 
-This is useful when you need specific information from large pages without processing the entire document.
-
-### Fetch Policies and Caching
-
-Configure caching behavior and timeouts with the `fetch_policy` parameter:
-
-```python
 # Extract with fetch policy for fresh content
-result = extract_tool.invoke(
+result = tool.invoke(
     {
         "urls": ["https://en.wikipedia.org/wiki/Quantum_computing"],
         "fetch_policy": {
@@ -129,51 +198,14 @@ result = extract_tool.invoke(
 print(f"Content length: {len(result[0]['content'])} characters")
 ```
 
-**Fetch policy parameters:**
-- `max_age_seconds`: Cache duration - how long to use cached content
-- `timeout_seconds`: Request timeout - maximum time to wait for page load
-- `disable_cache_fallback`
-
-### Key Parameters
-
-- **urls**: List of URLs to extract content from (required)
-- **search_objective**: Natural language description to focus extraction on specific information (optional)
-- **excerpts**: Configuration for excerpt length:
-  - `max_chars_per_result`: Maximum characters per result for compressed, contextual excerpts (same as in ParallelWebSearchTool)
-- **full_content**: Boolean to get full content vs. excerpts (default: True)
-- **fetch_policy**: Cache and timeout settings (optional):
-  - `max_age_seconds`: Cache duration - how long to use cached content
-  - `timeout_seconds`: Request timeout - maximum time to wait for page load
-
-## Async Support
-
-ParallelExtractTool supports asynchronous operations for better performance in async applications:
-
-```python
-import asyncio
-
-async def extract_async():
-    return await tool.ainvoke(
-        {
-            "urls": [
-                "https://en.wikipedia.org/wiki/Python_(programming_language)",
-                "https://en.wikipedia.org/wiki/JavaScript",
-            ]
-        }
-    )
-
-# Run async extraction
-result = asyncio.run(extract_async())
-print(f"Extracted {len(result)} results asynchronously")
-```
-
-## Error Handling
+### Error Handling
 
 The tool gracefully handles URLs that fail to extract, including them in results with error information:
 
+
 ```python
-# Advanced extraction with all options
-result = extract_tool.invoke(
+# Mix of valid and invalid URLs
+result = tool.invoke(
     {
         "urls": [
             "https://en.wikipedia.org/wiki/Artificial_intelligence",
@@ -191,18 +223,39 @@ for item in result:
         print(f"Extracted {len(item['content'])} characters")
 ```
 
-**Common error scenarios:**
-- **Missing API key**: Ensure `PARALLEL_API_KEY` environment variable is set
-- **Invalid URLs**: Tool returns `error_type` in result for unreachable pages
-- **Timeout errors**: Increase `request_timeout` in fetch_policy for slow-loading pages
 
----
+## Best Practices
 
-## Related
+- **Batch URLs**: Extract multiple URLs in a single call for better performance
+- **Set content limits**: Use `max_chars_per_extract` to control response size and token usage
+- **Handle errors**: Check for `error_type` in results to identify failed extractions
+- **Use async for performance**: Use `ainvoke()` in async applications for better performance
+- **Metadata fields**: Use `publish_date` and other metadata when available for context
 
-- [Parallel provider documentation](/oss/integrations/providers/parallel) - Overview of ChatParallelWeb chat model and ParallelWebSearchTool
-- [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) - Real-time web search with LLM-optimized results
+## Response Format
+
+The tool returns a list of dictionaries with the following format:
+
+```python
+[
+    {
+        "url": "https://example.com/article",
+        "title": "Article Title",
+        "content": "# Article Title\n\nMain content formatted as markdown...",
+        "publish_date": "2024-01-15"  # Optional, if available
+    },
+    # For failed extractions:
+    {
+        "url": "https://failed-site.com",
+        "title": None,
+        "content": "Error: 404 Not Found",
+        "error_type": "http_error"
+    }
+]
+```
 
 ## API reference
 
-For detailed documentation of all Parallel API features and configurations, visit the [Parallel Extract API documentation](https://docs.parallel.ai/api-reference/extract-beta/extract).
+For detailed documentation of all features and configuration options, head to the @[`ParallelExtractTool`] API reference.
+
+For detailed documentation of all ParallelExtractTool features and configurations head to the API reference: https://docs.parallel.ai/api-reference/extract-beta/extract

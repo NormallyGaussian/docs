@@ -4,25 +4,40 @@ title: Parallel Search
 
 >[Parallel](https://platform.parallel.ai/) is a real-time web search and content extraction platform designed specifically for LLMs and AI applications.
 
-Parallel provides real-time web search capabilities for LLMs. Search the web using **natural language objectives or specific queries**, then retrieve **structured, LLM-ready excerpts** from relevant web pages.
+The ParallelWebSearchTool provides access to Parallel's Search API, which streamlines the traditional search → scrape → extract pipeline into a single API call, returning structured, LLM-optimized results.
 
-Parallel's search capabilities provide real-time access to current information, making it ideal for answering questions about recent events, current market data, or any time-sensitive information. The platform offers unique features like domain filtering (include/exclude specific websites), configurable result compression, and support for both one-shot and agentic search modes.
+## Overview
 
-This notebook goes over how to use Parallel Search with LangChain.
+### Integration details
+
+| Class | Package | Serializable | JS support |  Package latest |
+| :--- | :--- | :---: | :---: | :---: |
+| [ParallelWebSearchTool](https://python.langchain.com/api_reference/parallel_web/search_tool/langchain_parallel.search_tool.ParallelWebSearchTool.html) | [langchain-parallel](https://python.langchain.com/api_reference/parallel_web/) | ❌ | ❌ |  ![PyPI - Version](https://img.shields.io/pypi/v/langchain-parallel?style=flat-square&label=%20) |
+
+### Tool features
+
+- **Real-time web search**: Access current information from the web
+- **Structured results**: Returns compressed, LLM-optimized excerpts
+- **Flexible input**: Support for natural language objectives or specific search queries
+- **Domain filtering**: Include or exclude specific domains with source policy
+- **Customizable output**: Control number of results (1-40) and excerpt length (min 100 chars)
+- **Rich metadata**: Optional search timing, result counts, and query information
+- **Async support**: Full async/await support with proper executor handling
+- **Error handling**: Comprehensive error handling with detailed error messages
 
 ## Setup
 
-### Installation
+The integration lives in the `langchain-parallel` package.
 
-Install the LangChain Parallel integration package:
 
 ```python
-pip install -qU langchain-parallel
+%pip install --quiet -U langchain-parallel
 ```
 
 ### Credentials
 
-You'll need a Parallel API key to use this integration. Get started by [signing up here](https://platform.parallel.ai).
+Head to [Parallel](https://beta.parallel.ai) to sign up and generate an API key. Once you've done this set the PARALLEL_API_KEY environment variable:
+
 
 ```python
 import getpass
@@ -32,96 +47,34 @@ if not os.environ.get("PARALLEL_API_KEY"):
     os.environ["PARALLEL_API_KEY"] = getpass.getpass("Parallel API key:\n")
 ```
 
-## Using ParallelWebSearchTool
+## Instantiation
 
-ParallelWebSearchTool is a tool that can be used with LangChain agents to perform real-time web searches. It provides a structured interface for search operations with LLM-optimized results:
+Here we show how to instantiate an instance of the ParallelWebSearchTool. The tool can be configured with API key and base URL parameters:
+
 
 ```python
 from langchain_parallel import ParallelWebSearchTool
 
-# Initialize the ParallelWebSearchTool
-search_tool = ParallelWebSearchTool(api_key=os.environ["PARALLEL_API_KEY"])
+# Basic instantiation - API key from environment
+tool = ParallelWebSearchTool()
 
-# Perform a search using a natural language objective
-search_results = search_tool.invoke({
-    "objective": "Latest developments in quantum computing",
-    "max_results": 5
-})
-
-print("Search Results:", search_results)
-
-# Access individual results
-for result in search_results['results']:
-    print(f"\nTitle: {result['title']}")
-    print(f"URL: {result['url']}")
-    print(f"Excerpts ({len(result['excerpts'])} found):")
-    for excerpt in result['excerpts']:
-        print(f"  - {excerpt[:100]}...")  # Print first 100 chars of each excerpt
+# With explicit API key and custom base URL
+tool = ParallelWebSearchTool(
+    api_key="your-api-key",
+    base_url="https://api.parallel.ai",  # default value
+)
 ```
 
-The tool accepts either an `objective` (natural language description up to 5,000 characters) or `search_queries` (up to 5 specific queries of 200 characters each). Results include:
-- `search_id`: Unique identifier for the search (string)
-- `results`: List of search results, each containing:
-  - `url`: The source webpage URL
-  - `title`: Page title
-  - `excerpts`: Array of relevant text excerpts from the page
-- `search_metadata`: Optional statistics (when `include_metadata=True`) including:
-  - `search_duration_seconds`: Time taken to complete the search
-  - `actual_results_returned`: Number of results returned
-  - `query_count`: Number of queries used
-  - `source_policy_applied`: Whether domain filtering was applied
+## Invocation
 
-**Example response structure:**
+### [Invoke directly with args](/docs/concepts/tools/#use-the-tool-directly)
+
+You can invoke the tool with either an `objective` (natural language description) or specific `search_queries`. The tool supports various configuration options including domain filtering and metadata collection:
+
 
 ```python
-{
-    "search_id": "search_abc123...",
-    "results": [
-        {
-            "url": "https://example.com/page",
-            "title": "Page Title",
-            "excerpts": [
-                "First relevant excerpt from the page...",
-                "Second relevant excerpt from the page..."
-            ]
-        }
-    ],
-    "search_metadata": {  # Only included if include_metadata=True
-        "search_duration_seconds": 4.123,
-        "search_timestamp": "2024-01-15T10:30:00",
-        "max_results_requested": 10,
-        "actual_results_returned": 8,
-        "search_id": "search_abc123...",
-        "query_count": 3,
-        "queries_used": ["query1", "query2", "query3"],
-        "source_policy_applied": true,
-        "included_domains": ["nature.com"],
-        "excluded_domains": ["reddit.com"]
-    }
-}
-```
-
-### Alternative: Using Specific Search Queries
-
-Instead of a natural language objective, you can provide specific search queries:
-
-```python
-# Perform a search using specific queries
-search_results = search_tool.invoke({
-    "search_queries": ["quantum computing breakthroughs 2024", "quantum AI applications"],
-    "max_results": 10
-})
-
-print("Search Results:", search_results)
-```
-
-## Advanced Features for ParallelWebSearchTool
-
-You can use advanced search options like controlling search mode, domain filtering, and metadata inclusion:
-
-```python
-# Perform a search with advanced options
-search_results = search_tool.invoke(
+# Using specific search queries with advanced options
+result = tool.invoke(
     {
         "search_queries": [
             "AI breakthroughs 2024",
@@ -129,7 +82,7 @@ search_results = search_tool.invoke(
             "generative AI news",
         ],
         "max_results": 8,
-        "excerpts": {"max_chars_per_result": 2000},  # Compressed, contextual excerpts optimized for LLMs
+        "excerpts": {"max_chars_per_result": 2000},
         "mode": "one-shot",  # Use 'agentic' for token-efficient results
         "source_policy": {
             "include_domains": ["arxiv.org", "nature.com"],
@@ -144,32 +97,80 @@ search_results = search_tool.invoke(
     }
 )
 
-print(search_results)
+print(result)
 ```
 
-### Key Parameters
-
-- **objective**: Natural language description of what you're searching for (max 5,000 characters)
-- **search_queries**: List of up to 5 specific search queries (200 characters each)
-- **max_results**: Number of results to return (1-40, default: 10)
-- **excerpts**: Configuration for excerpt length:
-  - `max_chars_per_result`: Maximum characters per result for compressed, contextual excerpts
-- **mode**: Search mode that presets defaults for different use cases:
-  - `"one-shot"` (default): Returns comprehensive results with longer excerpts. Best for direct user queries, where only a single request will be made, or where lower latency is desired.
-  - `"agentic"`: Returns more concise, token-efficient results designed for multi-step agentic workflows. Best when search is part of a larger reasoning loop. Latency may be slightly higher due to additional processing to increase excerpt relevance.
-- **source_policy**: Domain filtering with `include_domains` and `exclude_domains` lists
-- **fetch_policy**: Control caching and timeout behavior
-- **include_metadata**: Boolean to include search statistics and metadata in response
-
-## Async Support
-
-ParallelWebSearchTool supports asynchronous operations for better performance in async applications:
 
 ```python
-import asyncio
+# Using an objective (natural language) with metadata
+result = tool.invoke(
+    {
+        "objective": "What are the latest developments in artificial intelligence in 2024?",
+        "max_results": 5,
+        "include_metadata": True,  # Include search timing and statistics
+    }
+)
 
+print(result)
+
+# Example response structure:
+# {
+#     "search_id": "search_abc123...",
+#     "results": [
+#         {
+#             "url": "https://example.com/ai-news",
+#             "title": "Latest AI Developments 2024",
+#             "excerpts": [
+#                 "Recent breakthrough in transformer architectures...",
+#                 "New applications in computer vision..."
+#             ]
+#         }
+#     ],
+#     "search_metadata": {
+#         "search_duration_seconds": 4.123,
+#         "search_timestamp": "2024-01-15T10:30:00",
+#         "max_results_requested": 5,
+#         "actual_results_returned": 4,
+#         "search_id": "search_abc123...",
+#         "query_count": 1,
+#         "source_policy_applied": false
+#     }
+# }
+```
+
+### [Invoke with ToolCall](/docs/concepts/tool_calling/#tool-execution)
+
+We can also invoke the tool with a model-generated ToolCall, in which case a ToolMessage will be returned:
+
+
+```python
+# This is usually generated by a model, but we'll create a tool call directly for demo purposes.
+model_generated_tool_call = {
+    "args": {
+        "objective": "Find recent news about climate change initiatives",
+        "max_results": 3,
+        "source_policy": {"include_domains": ["ipcc.ch", "unfccc.int", "nature.com"]},
+        "include_metadata": True,
+    },
+    "id": "call_123",
+    "name": tool.name,  # "parallel_web_search"
+    "type": "tool_call",
+}
+
+result = tool.invoke(model_generated_tool_call)
+print(result)
+print(f"Tool name: {tool.name}")  # parallel_web_search
+print(f"Tool description: {tool.description}")
+```
+
+### [Async Usage](/docs/concepts/tools/#async)
+
+The tool supports full async/await operations for better performance in async applications:
+
+
+```python
 async def search_async():
-    return await search_tool.ainvoke(
+    return await tool.ainvoke(
         {
             "objective": "Latest quantum computing breakthroughs",
             "max_results": 5,
@@ -177,46 +178,156 @@ async def search_async():
         }
     )
 
+
 # Run async search
-result = asyncio.run(search_async())
+result = await search_async()
 print(result)
 ```
 
-## Error Handling
+### Parameter Details and Validation
 
-Handle common errors gracefully when using ParallelWebSearchTool:
+The tool performs comprehensive input validation and supports the following parameters:
+
+#### Required Parameters (at least one):
+- `objective`: Natural language description (max 5000 characters)
+- `search_queries`: List of search queries (max 5 queries, 200 chars each)
+
+#### Optional Parameters:
+- `max_results`: Number of results to return (1-40, default: 10)
+- `excerpts`: Excerpt settings dict (e.g., `{"max_chars_per_result": 1500}`)
+- `mode`: Search mode - 'one-shot' for comprehensive results, 'agentic' for token-efficient results
+- `source_policy`: Domain filtering with `include_domains` and/or `exclude_domains` lists
+- `fetch_policy`: Cache control dict (e.g., `{"max_age_seconds": 86400, "timeout_seconds": 60}`)
+- `include_metadata`: Include search timing and statistics (default: True)
+- `timeout`: Request timeout in seconds (optional)
+
+#### Error Handling:
+The tool provides detailed error messages for validation failures and API errors.
+
 
 ```python
-from langchain_parallel import ParallelWebSearchTool
-import os
+# Example of comprehensive parameter usage
+result = tool.invoke(
+    {
+        "objective": "Find comprehensive information about renewable energy policies in European countries",
+        "max_results": 15,
+        "excerpts": {
+            "max_chars_per_result": 2500
+        },  # Longer excerpts for detailed information
+        "mode": "one-shot",  # Comprehensive results
+        "source_policy": {
+            "include_domains": ["europa.eu", "iea.org", "irena.org"],
+            "exclude_domains": ["wikipedia.org", "reddit.com"],
+        },
+        "fetch_policy": {
+            "max_age_seconds": 86400,  # 1 day cache
+            "timeout_seconds": 90,
+        },
+        "include_metadata": True,
+        "timeout": 180,  # Extended timeout for comprehensive searches
+    }
+)
 
-search_tool = ParallelWebSearchTool(api_key=os.environ["PARALLEL_API_KEY"])
-
-try:
-    search_results = search_tool.invoke({
-        "objective": "Latest AI developments",
-        "max_results": 10,
-        "timeout": 30  # Add timeout to prevent hanging
-    })
-    print(f"Found {len(search_results.get('results', []))} results")
-except Exception as e:
-    print(f"Search failed: {str(e)}")
-    # Handle error appropriately (retry, fallback, etc.)
+# Access results and metadata
+print(f"Found {len(result['results'])} results")
+if "search_metadata" in result:
+    metadata = result["search_metadata"]
+    print(f"Search took {metadata['search_duration_seconds']}s")
+    print(f"Source policy applied: {metadata.get('source_policy_applied', False)}")
 ```
 
-**Common error scenarios:**
-- **Missing API key**: Ensure `PARALLEL_API_KEY` environment variable is set
-- **Invalid parameters**: Verify `max_results` is between 1-40, queries don't exceed length limits
-- **Timeout errors**: Increase `timeout` parameter for complex searches
-- **Rate limiting**: Implement exponential backoff for retry logic
+## Chaining
 
----
+We can use our tool in a chain by first binding it to a [tool-calling model](/docs/how_to/tool_calling/) and then calling it:
 
-## Related
+import ChatModelTabs from "@theme/ChatModelTabs";
 
-- [Parallel provider documentation](/oss/integrations/providers/parallel) - Overview of ChatParallelWeb chat model, ParallelWebSearchTool, and ParallelExtractTool
-- [Parallel Extract tool documentation](/oss/integrations/tools/parallel_extract) - Clean content extraction from web pages
+<ChatModelTabs customVarName="llm" />
+
+
+
+```python
+# | output: false
+# | echo: false
+
+# !pip install -qU langchain langchain-openai
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(model="gpt-4o", model_provider="openai")
+```
+
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableConfig, chain
+
+prompt = ChatPromptTemplate(
+    [
+        ("system", "You are a helpful assistant."),
+        ("human", "{user_input}"),
+        ("placeholder", "{messages}"),
+    ]
+)
+
+# specifying tool_choice will force the model to call this tool.
+llm_with_tools = llm.bind_tools([tool], tool_choice=tool.name)
+
+llm_chain = prompt | llm_with_tools
+
+
+@chain
+def tool_chain(user_input: str, config: RunnableConfig):
+    input_ = {"user_input": user_input}
+    ai_msg = llm_chain.invoke(input_, config=config)
+    tool_msgs = tool.batch(ai_msg.tool_calls, config=config)
+    return llm_chain.invoke({**input_, "messages": [ai_msg, *tool_msgs]}, config=config)
+
+
+tool_chain.invoke("What are the latest breakthrough discoveries in quantum computing?")
+```
+
+## Best Practices
+
+- **Use specific objectives**: More specific objectives lead to better, more targeted results
+- **Apply domain filtering**: Use `source_policy` to focus on authoritative sources or exclude unreliable domains
+- **Include metadata**: Set `include_metadata: True` for debugging and performance optimization
+- **Handle errors gracefully**: The tool provides detailed error messages for validation and API failures
+- **Use async for performance**: Use `ainvoke()` in async applications for better performance
+
+## Response Format
+
+The tool returns a structured dictionary with the following format:
+
+```python
+{
+    "search_id": "search_abc123...",  # Unique search identifier
+    "results": [  # List of search results
+        {
+            "url": "https://example.com/page",
+            "title": "Page Title",
+            "excerpts": [  # Relevant text excerpts
+                "First relevant excerpt...",
+                "Second relevant excerpt..."
+            ]
+        }
+    ],
+    "search_metadata": {  # Optional metadata (if include_metadata=True)
+        "search_duration_seconds": 4.123,
+        "search_timestamp": "2024-01-15T10:30:00",
+        "max_results_requested": 10,
+        "actual_results_returned": 8,
+        "search_id": "search_abc123...",
+        "query_count": 3,  # Number of queries used
+        "queries_used": ["query1", "query2", "query3"],  # If search_queries provided
+        "source_policy_applied": true,  # If source_policy was used
+        "included_domains": ["nature.com"],  # Domains that were included
+        "excluded_domains": ["reddit.com"]   # Domains that were excluded
+    }
+}
+```
 
 ## API reference
 
-For detailed documentation of all Parallel API features and configurations, visit the [Parallel Search API documentation](https://docs.parallel.ai/api-reference/search-beta/search).
+For detailed documentation of all features and configuration options, head to the @[`ParallelWebSearchTool`] API reference.
+
+For detailed documentation of all ParallelWebSearchTool features and configurations head to the API reference: https://docs.parallel.ai/api-reference/search-beta/search
