@@ -70,6 +70,7 @@ dependencies = [
     "langchain-milvus",
     "langchain-neo4j",
     "langchain-nvidia-ai-endpoints",
+    "langchain-parallel",
     "langchain-pinecone",
     #"langchain-postgres",
     "langchain-redis",
@@ -189,6 +190,7 @@ langchain-upstage = { path = "../../../langchain-upstage/libs/upstage", editable
 langchain-weaviate = { path = "../../../langchain-weaviate/libs/weaviate", editable = true }
 
 ## Non-langchain-ai org packages (alphabetical)
+langchain-parallel = { path = "../../../langchain-parallel", editable = true }
 langchain-tavily = { path = "../../../langchain-tavily", editable = true }
 
 ## LangGraph monorepo packages (alphabetical)
