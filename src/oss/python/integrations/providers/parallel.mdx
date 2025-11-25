@@ -15,6 +15,69 @@ pip install -qU langchain-parallel
 
 In order to use the package, you will also need to set the `PARALLEL_API_KEY` environment variable to your Parallel API key. You can obtain an API key by [signing up at Parallel](https://platform.parallel.ai).
 
+## Tools
+
+### ParallelWebSearchTool
+
+Real-time web search tool that returns structured, LLM-optimized results with domain filtering and configurable search modes.
+
+```python
+from langchain_parallel import ParallelWebSearchTool
+
+# Basic instantiation - API key from environment
+tool = ParallelWebSearchTool()
+
+# With explicit API key and custom base URL
+tool = ParallelWebSearchTool(
+    api_key="your-api-key",
+    base_url="https://api.parallel.ai",  # default value
+)
+
+# Using an objective (natural language) with metadata
+result = tool.invoke(
+    {
+        "objective": "What are the latest developments in artificial intelligence in 2024?",
+        "max_results": 5,
+        "include_metadata": True,  # Include search timing and statistics
+    }
+)
+
+print(result)
+```
+
+See the [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) for detailed usage examples.
+
+### ParallelExtractTool
+
+Content extraction tool that retrieves clean, markdown-formatted content from web pages, removing ads and boilerplate.
+
+```python
+from langchain_parallel import ParallelExtractTool
+
+# Basic instantiation - API key from environment
+tool = ParallelExtractTool()
+
+# With explicit API key and custom settings
+tool = ParallelExtractTool(
+    api_key="your-api-key",
+    base_url="https://api.parallel.ai",  # default value
+    max_chars_per_extract=5000,  # Limit content length
+)
+
+# Extract from a single URL
+result = tool.invoke(
+    {"urls": ["https://en.wikipedia.org/wiki/Artificial_intelligence"]}
+)
+
+print(f"Extracted {len(result)} result(s)")
+print(f"Title: {result[0]['title']}")
+print(f"URL: {result[0]['url']}")
+print(f"Content length: {len(result[0]['content'])} characters")
+print(f"Content preview: {result[0]['content'][:200]}...")
+```
+
+See the [Parallel Extract tool documentation](/oss/integrations/tools/parallel_extract) for detailed usage examples.
+
 ## Chat Models
 
 Parallel provides `ChatParallelWeb`, a chat model with real-time web research capabilities built in.
@@ -77,30 +140,6 @@ async for chunk in llm.astream("What's new in space exploration?"):
     print(chunk.content, end="", flush=True)
 ```
 
-## Tools
-
-### ParallelWebSearchTool
-
-Real-time web search tool that returns structured, LLM-optimized results with domain filtering and configurable search modes.
-
-```python
-from langchain_parallel import ParallelWebSearchTool
-```
-
-See the [Parallel Search tool documentation](/oss/integrations/tools/parallel_search) for detailed usage examples.
-
-### ParallelExtractTool
-
-Content extraction tool that retrieves clean, markdown-formatted content from web pages, removing ads and boilerplate.
-
-```python
-from langchain_parallel import ParallelExtractTool
-```
-
-See the [Parallel Extract tool documentation](/oss/integrations/tools/parallel_extract) for detailed usage examples.
-
-## Configuration Options
-
 ### ChatParallelWeb Parameters
 
 - `model`: Model to use (default: "speed" for fast responses)
@@ -109,29 +148,6 @@ See the [Parallel Extract tool documentation](/oss/integrations/tools/parallel_e
 - `timeout`: Request timeout in seconds (optional)
 - `max_retries`: Number of retry attempts (default: 2)
 
-### ParallelWebSearchTool Parameters
-
-- `objective`: Natural language description of search intent (max 5,000 characters)
-- `search_queries`: List of up to 5 specific search queries (200 characters each)
-- `max_results` (1-40): Number of search results to return (default: 10)
-- `mode`: Search mode that presets defaults for different use cases:
-  - `"one-shot"` (default): Returns comprehensive results with longer excerpts. Best for direct user queries or where lower latency is desired.
-  - `"agentic"`: Returns more concise, token-efficient results designed for multi-step agentic workflows.
-- `source_policy`: Domain filtering with `include_domains` and `exclude_domains` lists
-- `fetch_policy`: Cache and timeout configuration with `max_age_seconds` and `timeout_seconds`
-- `include_metadata`: Include search statistics and metadata (True/False)
-
-**Note:** You must provide either `objective` or `search_queries` (at least one is required).
-
-### ParallelExtractTool Parameters
-
-- `urls`: List of URLs to extract content from (required)
-- `search_objective`: Focus extraction on specific information (optional)
-- `excerpts`: Configuration for excerpt length with `max_chars_per_result` parameter
-- `full_content`: Boolean to get full content vs. excerpts (default: True)
-- `fetch_policy`: Cache and timeout settings with `max_age_seconds` and `timeout_seconds`
-
-Response includes `url`, `title`, `content` (markdown format), `publish_date`, and `error_type` for failed extractions.
 
 ## Related
 
